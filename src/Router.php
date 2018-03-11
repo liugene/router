@@ -14,7 +14,7 @@
 
 namespace linkphp\router;
 
-//use linkphp\router\router\Router as RouterPro;
+use linkphp\router\router\Router as RouterPro;
 use linkphp\boot\interfaces\RunInterface;
 
 class Router implements RunInterface
@@ -40,7 +40,7 @@ class Router implements RunInterface
     static private function router()
     {
         if (!isset(self::$_router)) {
-            self::$_router = new \linkphp\router\router\Router();
+            self::$_router = new RouterPro();
         }
 
         return self::$_router;
