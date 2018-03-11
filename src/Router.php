@@ -15,7 +15,7 @@
 namespace linkphp\router;
 
 use linkphp\router\router\Router as RouterPro;
-use linkphp\boot\interfaces\RunInterface;
+use linkphp\interfaces\RunInterface;
 
 class Router implements RunInterface
 {
