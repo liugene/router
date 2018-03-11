@@ -95,7 +95,7 @@ class Router
      */
     private $return_data;
 
-    public function run(Router $router){}
+    public function run(Router $router){dump(1);}
 
     public function set(Router $router)
     {
