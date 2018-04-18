@@ -95,7 +95,10 @@ class Router
      */
     private $return_data;
 
-    public function run(Router $router){dump(1);}
+    public function run(Router $router)
+    {
+        return $this;
+    }
 
     public function set(Router $router)
     {
