@@ -31,9 +31,7 @@ class Dispatch
         }
         //实例化控制器类
         $controller_name = $router->getNamespace()  . '\controller\\' . $router->getPlatform() . '\\' . $router->getController();
-        dump($controller_name);
         $filename = str_replace('\\','/',$dir . '/' . $router->getController()  . '.php');
-        dump($filename);
         if(file_exists($filename)){
             Application::bind(Application::definition()
                 ->setAlias($controller_name)
