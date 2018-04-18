@@ -96,7 +96,7 @@ class Parser
         $this->_router->setController(
             isset($get_param[$this->_router->getVarController()])
                 ?
-                strtolower($get_param[$this->_router->getVarController()])
+                ucfirst($get_param[$this->_router->getVarController()])
                 :
                 $this->_router->getDefaultController()
         );
@@ -129,7 +129,7 @@ class Parser
                 ?
                 $this->_router->getDefaultController()
                 :
-                strtolower($this->_router->getUrl('controller'))
+                ucfirst($this->_router->getUrl('controller'))
         );
         //定义常量保存操作方法
         $this->_router->setAction(
