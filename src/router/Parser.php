@@ -9,7 +9,7 @@ class Parser
 
     /**
      * router类实例
-     * @var \linkphp\boot\router\Router
+     * @var \linkphp\router\router\Router
      */
     private $_router;
 
