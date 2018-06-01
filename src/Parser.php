@@ -1,6 +1,6 @@
 <?php
 
-namespace linkphp\router\router;
+namespace linkphp\router;
 
 use Closure;
 
@@ -9,7 +9,7 @@ class Parser
 
     /**
      * router类实例
-     * @var \linkphp\router\router\Router
+     * @var \linkphp\router\Router
      */
     private $_router;
 

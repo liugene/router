@@ -12,7 +12,7 @@
 // |               路由分发
 // +----------------------------------------------------------------------
 
-namespace linkphp\router\router;
+namespace linkphp\router;
 
 use linkphp\Application;
 
