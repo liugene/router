@@ -14,7 +14,8 @@
 
 namespace linkphp\router;
 
-use linkphp\Application;
+use framework\Application;
+use framework\Exception;
 
 class Dispatch
 {
@@ -23,24 +24,12 @@ class Dispatch
     public function dispatch(Router $router)
     {
         Application::hook('modelMiddleware');
-        $dir = $router->getDir() . 'controller/' . $router->getPlatform();
-        //判断模块是否存在
-        if(!is_dir($dir)){
-            //抛出异常
-            throw new \Exception("无法加载模块");
-        }
         //实例化控制器类
         $controller_name = $router->getNamespace()  . '\controller\\' . $router->getPlatform() . '\\' . $router->getController();
-        $filename = str_replace('\\','/',$dir . '/' . $router->getController()  . '.php');
-        if(file_exists($filename)){
-            Application::bind(Application::definition()
-                ->setAlias($controller_name)
-                ->setIsSingleton(true)
-                ->setClassName($controller_name));
-        } else {
-            //抛出异常
-            throw new \Exception("无法加载控制器");
-        }
+        Application::bind(Application::definition()
+            ->setAlias($controller_name)
+            ->setIsSingleton(true)
+            ->setClassName($controller_name));
         //调用方法
         $action_name = $router->getAction();
         Application::hook('controllerMiddleware');
@@ -50,7 +39,7 @@ class Dispatch
             $router->setReturnData($controller->$action_name());
         } else {
             //抛出异常
-            throw new \Exception("无法加载方法");
+            throw new Exception("无法加载方法");
         }
     }
 }

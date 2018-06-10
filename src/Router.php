@@ -3,16 +3,46 @@
 namespace linkphp\router;
 
 use Closure;
-use linkphp\interfaces\RunInterface;
+use framework\interfaces\RunInterface;
 
 class Router implements RunInterface
 {
 
-    /**
-     * @param array $rule
-     * 路由规则
-     */
-    private $rule = [];
+    // 路由规则
+    private $rules = [
+        'get'     => [],
+        'post'    => [],
+        'put'     => [],
+        'delete'  => [],
+        'patch'   => [],
+        'head'    => [],
+        'options' => [],
+        '*'       => [],
+        'alias'   => [],
+        'domain'  => [],
+        'pattern' => [],
+        'name'    => [],
+    ];
+
+    // REST路由操作方法定义
+    private $rest = [
+        'index'  => ['get', '', 'index'],
+        'create' => ['get', '/create', 'create'],
+        'edit'   => ['get', '/:id/edit', 'edit'],
+        'read'   => ['get', '/:id', 'read'],
+        'save'   => ['post', '', 'save'],
+        'update' => ['put', '/:id', 'update'],
+        'delete' => ['delete', '/:id', 'delete'],
+    ];
+
+    // 不同请求类型的方法前缀
+    private $method_prefix = [
+        'get'    => 'get',
+        'post'   => 'post',
+        'put'    => 'put',
+        'delete' => 'delete',
+        'patch'  => 'patch',
+    ];
 
     /**
      * @param string $url_module
@@ -87,14 +117,35 @@ class Router implements RunInterface
 
     private $action;
 
-    private $dir = APPLICATION_PATH;
-
     private $namespace = APP_NAMESPACE_NAME;
+
+    /**
+     * 请求方式
+     */
+    private $method;
 
     /**
      * 返回的数据
      */
     private $return_data;
+
+    /**
+     * Parser
+     * @var Parser
+     */
+    private $_parser;
+
+    /**
+     * Dispatch
+     * @var Dispatch
+     */
+    private $_dispatch;
+
+    public function __construct(Parser $parser, Dispatch $dispatch)
+    {
+        $this->_parser = $parser;
+        $this->_dispatch = $dispatch;
+    }
 
     public function init()
     {
@@ -111,31 +162,21 @@ class Router implements RunInterface
         return $this;
     }
 
-    public function import($rules)
+    public function import(array $rules)
     {
-        if(is_array($rules)){
-            $this->rule($rules);
-        }
-        return $this;
-    }
-
-    public function rule($rule,$tag='')
-    {
-        if(is_array($rule)) $this->rule = array_merge($this->rule,$rule);
-        if($tag instanceof Closure) $this->rule = array_merge($this->rule,[$rule => $tag]);
-        if($tag!='') $this->rule = array_merge($this->rule,[$rule => $tag]);
+        $this->rule($rules);
         return $this;
     }
 
     public function parser()
     {
-        (new Parser())->parserPath($this);
+        $this->_parser->parserPath($this);
         return $this;
     }
 
     public function dispatch()
     {
-        (new Dispatch())->dispatch($this);
+        $this->_dispatch->dispatch($this);
         return $this;
     }
 
@@ -160,6 +201,12 @@ class Router implements RunInterface
     public function setPath($path)
     {
         $this->path = $path;
+        return $this;
+    }
+
+    public function setMethod($method)
+    {
+        $this->method = $method;
         return $this;
     }
 
@@ -229,12 +276,6 @@ class Router implements RunInterface
         return $this;
     }
 
-    public function setDir($dir)
-    {
-        $this->dir = $dir;
-        return $this;
-    }
-
     public function setNamespace($namespace)
     {
         $this->namespace = $namespace;
@@ -262,6 +303,11 @@ class Router implements RunInterface
     public function getPath()
     {
         return $this->path;
+    }
+
+    public function getMethod()
+    {
+        return $this->method;
     }
 
     public function getDefaultPlatform()
@@ -301,7 +347,7 @@ class Router implements RunInterface
 
     public function getRule()
     {
-        return $this->rule;
+        return $this->rules;
     }
 
     public function getGetParam()
@@ -324,14 +370,260 @@ class Router implements RunInterface
         return $this->action;
     }
 
-    public function getDir()
-    {
-        return $this->dir;
-    }
-
     public function getNamespace()
     {
         return $this->namespace;
+    }
+
+    /**
+     * 注册路由
+     * @access public
+     * @param string|array    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param string    $type 请求类型
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function rule($rule, $route='', $type = '*', $option = [], $pattern = [])
+    {
+        $type = strtolower($type);
+
+        if (strpos($type, '|')) {
+            $option['method'] = $type;
+            $type             = '*';
+        }
+
+        if (is_array($rule) && empty($route)) {
+            foreach ($rule as $key => $val) {
+                if (is_numeric($key)) {
+                    $key = array_shift($val);
+                }
+                if (is_array($val)) {
+                    $route    = $val[0];
+                    $option1  = array_merge($option, $val[1]);
+                    $type = isset($val[1]['method']) ? $val[1]['method'] : $type;
+                    $pattern1 = array_merge($pattern, isset($val[2]) ? $val[2] : []);
+                } else {
+                    $option1  = null;
+                    $pattern1 = null;
+                    $route    = $val;
+                }
+                $this->setRule($key, $route, $type, !is_null($option1) ? $option1 : $option, !is_null($pattern1) ? $pattern1 : $pattern);
+            }
+        } else {
+            $this->setRule($rule, $route, $type, $option, $pattern);
+        }
+    }
+
+    private function setRule($rule, $route, $type, $option, $pattern)
+    {
+//        dump($rule);
+//        dump($route);
+//        dump($type);
+//        dump($option);
+//        dump($pattern);die;
+        if (is_array($rule)) {
+            $rule = $rule[0];
+            $route = $rule[1];
+        }
+
+        if ('$' == substr($rule, -1, 1)) {
+            $rule = substr($rule, 0, -1);
+        }
+
+        if ('/' != $rule) {
+            $rule = trim($rule, '/');
+        }
+        $vars = $this->parseVar($rule);
+        $this->rules[$type][] = ['rule' => empty($vars['regex_route']) ?
+            substr($vars['regex'],0, -2) :
+            $vars['regex_route'] . '\/' . substr($vars['regex'],0, -2),
+            'route' => $route, 'var' => $vars['var'], 'option' => $option, 'pattern' => $pattern];
+    }
+
+    // 分析路由规则中的变量
+    private function parseVar($rule)
+    {
+        // 提取路由规则中的变量
+        $var = [];
+        $regex_route = '';
+        $regex = '';
+        foreach (explode('/', $rule) as $key => $val) {
+            if (false !== strpos($val, '<') && preg_match_all('/<(\w+(\??))>/', $val, $matches)) {
+                foreach ($matches[1] as $name) {
+                    if (strpos($name, '?')) {
+                        $name     = substr($name, 0, -1);
+                    }
+                    $var[] = $name;
+                }
+            }
+
+            if (0 === strpos($val, '[:')) {
+                // 可选参数
+                $val      = substr($val, 1, -1);
+            }
+            if (0 === strpos($val, ':')) {
+                // URL变量
+                $name = substr($val, 1);
+                $regex .= '\d*\/';
+                $var['var'][] = $name;
+                $var['key'][] = $key;
+            } else {
+                $regex_route = $val;
+            }
+        }
+        return ['regex_route' => $regex_route, 'regex' => $regex, 'var' => $var];
+    }
+
+
+    /**
+     * 注册路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function any($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, '*', $option, $pattern);
+    }
+
+    /**
+     * 注册GET路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function get($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'GET', $option, $pattern);
+    }
+
+    /**
+     * 注册POST路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function post($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'POST', $option, $pattern);
+    }
+
+    /**
+     * 注册PUT路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function put($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'PUT', $option, $pattern);
+    }
+
+    /**
+     * 注册DELETE路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function delete($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'DELETE', $option, $pattern);
+    }
+
+    /**
+     * 注册PATCH路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function patch($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'PATCH', $option, $pattern);
+    }
+
+    /**
+     * 注册控制器路由 操作方法对应不同的请求后缀
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function controller($rule, $route = '', $option = [], $pattern = [])
+    {
+        foreach ($this->method_prefix as $type => $val) {
+            self::$type($rule . '/:action', $route . '/' . $val . ':action', $option, $pattern);
+        }
+    }
+
+    /**
+     * 注册别名路由
+     * @access public
+     * @param string|array  $rule 路由别名
+     * @param string        $route 路由地址
+     * @param array         $option 路由参数
+     * @return void
+     */
+    public function alias($rule = null, $route = '', $option = [])
+    {
+        if (is_array($rule)) {
+            $this->rules['alias'] = array_merge($this->rules['alias'], $rule);
+        } else {
+            $this->rules['alias'][$rule] = $option ? [$route, $option] : $route;
+        }
+    }
+
+    /**
+     * 设置不同请求类型下面的方法前缀
+     * @access public
+     * @param string    $method 请求类型
+     * @param string    $prefix 类型前缀
+     * @return void
+     */
+    public function setMethodPrefix($method, $prefix = '')
+    {
+        if (is_array($method)) {
+            $this->method_prefix = array_merge($this->method_prefix, array_change_key_case($method));
+        } else {
+            $this->method_prefix[strtolower($method)] = $prefix;
+        }
+    }
+
+    /**
+     * rest方法定义和修改
+     * @access public
+     * @param string        $name 方法名称
+     * @param array|bool    $resource 资源
+     * @return void
+     */
+    public function rest($name, $resource = [])
+    {
+        if (is_array($name)) {
+            $this->rest = $resource ? $name : array_merge($this->rest, $name);
+        } else {
+            $this->rest[$name] = $resource;
+        }
     }
 
 }

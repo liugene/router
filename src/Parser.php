@@ -13,6 +13,32 @@ class Parser
      */
     private $_router;
 
+    /**
+     * 检测URL和规则路由是否匹配
+     * @access private
+     * @param string    $url URL地址
+     * @param array    $rule 路由规则
+     * @param array     $pattern 变量规则
+     * @return string
+     */
+    private function match($url, array $rule, $pattern)
+    {
+        $curr_url = explode('/', $url);
+        $router = $url;
+        foreach ($rule as $key => $val) {
+            if(preg_match('/^' . $val['rule'] . '$/', $url)){
+                $router = $val['route'];
+                if(!empty($val['var'])){
+                    foreach ($val['var']['var'] as $varKey => $value){
+                        $router .= '/' . $value . '/' . $curr_url[$val['var']['key'][$varKey]];
+                    }
+                }
+            }
+        }
+        // 成功匹配后返回URL
+        return $router;
+    }
+
     public function parserPath(Router $router)
     {
         $this->_router = $router;
@@ -22,9 +48,11 @@ class Parser
          */
         if($this->_router->getUrlModel() != '0' && $this->_router->getRouterOn()){
             $rule = $this->_router->getRule();
-            if(array_key_exists($this->_router->getPath(),$rule)){
-                $path = $rule[$path];
-            }
+            /**
+             * URL参数匹配
+             */
+            $this->parserParam($path, $rule);
+            return;
         }
         /**
          * URL参数匹配
@@ -32,37 +60,40 @@ class Parser
         $this->parserParam($path);
     }
 
-    public function parserParam($path)
+    public function parserParam($path, $rule = false)
     {
         if($path instanceof Closure){
-            $url = call_user_func($path,$this->_router);
+            $parser_url = call_user_func($path,$this->_router);
         } elseif(is_array($path)) {
-            $url = preg_replace('/\.html$/','',$path);
+            $parser_url = preg_replace('/\.html$/','',$path);
         } else {
-            $url = preg_replace('/\.html$/','',$path);
+            $parser_url = preg_replace('/\.html$/','',$path);
+        }
+        if($rule){
+            $parser_url = $this->match(trim($parser_url, '/'), array_merge($rule['get'],$rule['*']), []);
         }
         switch($this->_router->getUrlModel()){
             case 0:
-                $this->initDispatchParamByNormal($url);
+                $this->initDispatchParamByNormal($parser_url);
                 break;
             case 1:
-                $dispatch = explode('/',trim($url,'/'));
+                $dispatch = explode('/',trim($parser_url,'/'));
                 if(in_array('index.php',$dispatch)){
                     $param['platform'] = isset($dispatch['1']) ? $dispatch['1'] : '';
                     $param['controller'] = isset($dispatch['2']) ? $dispatch['2'] : '';
                     $param['action'] = isset($dispatch['3']) ? $dispatch['3'] : '';
-                    $this->getValue($url,4);
+                    $this->getValue($parser_url,4);
                 } else {
                     $param['platform'] = isset($dispatch['0']) ? $dispatch['0'] : '';
                     $param['controller'] = isset($dispatch['1']) ? $dispatch['1'] : '';
                     $param['action'] = isset($dispatch['2']) ? $dispatch['2'] : '';
-                    $this->getValue($url,3);
+                    $this->getValue($parser_url,3);
                 }
                 $this->_router->setUrl($param);
                 $this->initDispatchParamByPathInfo();
                 break;
             case 2:
-                $this->initDispatchParamByNormal($url);
+                $this->initDispatchParamByNormal($parser_url);
                 break;
         }
     }
