@@ -2,7 +2,6 @@
 
 namespace linkphp\router;
 
-use Closure;
 use framework\interfaces\RunInterface;
 
 class Router implements RunInterface
@@ -55,7 +54,7 @@ class Router implements RunInterface
      * @param array $url
      * 封装后请求地址
      */
-    private $url = [];
+    private $dispatch = [];
 
     /**
      * @param array $path
@@ -117,7 +116,7 @@ class Router implements RunInterface
 
     private $action;
 
-    private $namespace = APP_NAMESPACE_NAME;
+    private $namespace;
 
     /**
      * 请求方式
@@ -141,6 +140,8 @@ class Router implements RunInterface
      */
     private $_dispatch;
 
+    private $callback;
+
     public function __construct(Parser $parser, Dispatch $dispatch)
     {
         $this->_parser = $parser;
@@ -148,16 +149,6 @@ class Router implements RunInterface
     }
 
     public function init()
-    {
-        return $this;
-    }
-
-    public function run(Router $router)
-    {
-        return $this;
-    }
-
-    public function set(Router $router)
     {
         return $this;
     }
@@ -192,9 +183,9 @@ class Router implements RunInterface
         return $this;
     }
 
-    public function setUrl($url)
+    public function setDispatch($dispatch)
     {
-        $this->url = $url;
+        $this->dispatch = $dispatch;
         return $this;
     }
 
@@ -282,6 +273,12 @@ class Router implements RunInterface
         return $this;
     }
 
+    public function setCallBack($callback)
+    {
+        $this->callback = $callback;
+        return $this;
+    }
+
 
     /////////////////参数获取//////////////////////
 
@@ -295,9 +292,9 @@ class Router implements RunInterface
         return $this->url_module;
     }
 
-    public function getUrl($key='')
+    public function getDispatch($key='')
     {
-        return $key == '' ? $this->url : $this->url[$key];
+        return $key == '' ? $this->dispatch : $this->dispatch[$key];
     }
 
     public function getPath()
@@ -373,6 +370,11 @@ class Router implements RunInterface
     public function getNamespace()
     {
         return $this->namespace;
+    }
+
+    public function getCallBack()
+    {
+        return $this->callback;
     }
 
     /**

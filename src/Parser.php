@@ -13,6 +13,8 @@ class Parser
      */
     private $_router;
 
+    private $param;
+
     /**
      * 检测URL和规则路由是否匹配
      * @access private
@@ -23,16 +25,44 @@ class Parser
      */
     private function match($url, array $rule, $pattern)
     {
+
         $curr_url = explode('/', $url);
+
         $router = $url;
+
         foreach ($rule as $key => $val) {
+
+            /**
+             * 正则匹配路由规则
+             */
             if(preg_match('/^' . $val['rule'] . '$/', $url)){
+
                 $router = $val['route'];
+
+                /**
+                 * 检测是否为闭包
+                 */
+                if($router instanceof Closure){
+                    $this->_router->setCallBack([$router,$curr_url]);
+                    return false;
+                }
+
+                /**
+                 * 检测是否有@
+                 */
+                if(0 != strpos($router, '@')){
+                    $path = str_replace('@', '/', $router);
+                    list($empty, $name, $module, $controller, $action) = explode('/' , $path);
+                    $this->_router->setNamespace(strtolower($name));
+                    $router = '/'. $module . '/' . $controller . '/' . $action;
+                }
+
                 if(!empty($val['var'])){
                     foreach ($val['var']['var'] as $varKey => $value){
                         $router .= '/' . $value . '/' . $curr_url[$val['var']['key'][$varKey]];
                     }
                 }
+                continue;
             }
         }
         // 成功匹配后返回URL
@@ -62,40 +92,61 @@ class Parser
 
     public function parserParam($path, $rule = false)
     {
-        if($path instanceof Closure){
-            $parser_url = call_user_func($path,$this->_router);
-        } elseif(is_array($path)) {
-            $parser_url = preg_replace('/\.html$/','',$path);
+        if(is_array($path)) {
+            $parser_url = preg_replace('/\.html[\s\S]*/','',$path);
         } else {
-            $parser_url = preg_replace('/\.html$/','',$path);
+            $parser_url = preg_replace('/\.html[\s\S]*/','',$path);
         }
         if($rule){
-            $parser_url = $this->match(trim($parser_url, '/'), array_merge($rule['get'],$rule['*']), []);
+            /**
+             * 实例控制器,获取到匹配个的路由地址
+             */
+            $parser_url = $this->match(
+                trim($parser_url, '/'),
+                array_merge($rule['get'],$rule['*']),
+                []);
+            /**
+             * 走闭包路由，不实例控制器
+             */
+            if(!$parser_url){
+                return;
+            }
         }
         switch($this->_router->getUrlModel()){
             case 0:
-                $this->initDispatchParamByNormal($parser_url);
+                $this->initDispatchParamByNormal();
                 break;
             case 1:
                 $dispatch = explode('/',trim($parser_url,'/'));
-                if(in_array('index.php',$dispatch)){
-                    $param['platform'] = isset($dispatch['1']) ? $dispatch['1'] : '';
-                    $param['controller'] = isset($dispatch['2']) ? $dispatch['2'] : '';
-                    $param['action'] = isset($dispatch['3']) ? $dispatch['3'] : '';
+                if(preg_match('/^index.php$/', $dispatch[0])){
+                    $this->param['platform'] = $this->assetNamespace($dispatch['1']);
+                    $this->param['controller'] = isset($dispatch['2']) ? $dispatch['2'] : '';
+                    $this->param['action'] = isset($dispatch['3']) ? $dispatch['3'] : '';
                     $this->getValue($parser_url,4);
                 } else {
-                    $param['platform'] = isset($dispatch['0']) ? $dispatch['0'] : '';
-                    $param['controller'] = isset($dispatch['1']) ? $dispatch['1'] : '';
-                    $param['action'] = isset($dispatch['2']) ? $dispatch['2'] : '';
+                    $this->param['platform'] = $this->assetNamespace($dispatch['0']);
+                    $this->param['controller'] = isset($dispatch['1']) ? $dispatch['1'] : '';
+                    $this->param['action'] = isset($dispatch['2']) ? $dispatch['2'] : '';
                     $this->getValue($parser_url,3);
                 }
-                $this->_router->setUrl($param);
+                $this->_router->setDispatch($this->param);
                 $this->initDispatchParamByPathInfo();
                 break;
-            case 2:
-                $this->initDispatchParamByNormal($parser_url);
+            default :
+                $this->initDispatchParamByNormal();
                 break;
         }
+    }
+
+    private function assetNamespace($path)
+    {
+        if($path && false != strpos($path, '.')){
+            list($namespace, $platform) = explode('.',$path);
+            $this->_router->setNamespace(strtolower($namespace));
+            return $platform;
+        }
+
+        return $path;
     }
 
     private function getValue($url,$start)
@@ -106,6 +157,7 @@ class Parser
             for($i=0;$i<count($param);$i+=2){
                 $_GET[$param[$i]] = $param[$i+1];
             }
+            $this->_router->setGetParam($_GET);
             return $_GET;
         }
     }
@@ -113,7 +165,7 @@ class Parser
     /**
      * 默认模式下初拼接分发参数
      */
-    private function initDispatchParamByNormal($url){
+    private function initDispatchParamByNormal(){
         $get_param = $this->_router->getGetParam();
         //定义常量保存操作平台
         $this->_router->setPlatform(
@@ -148,27 +200,27 @@ class Parser
     {
         //定义常量保存操作平台
         $this->_router->setPlatform(
-            $this->_router->getUrl('platform') == ''
+            $this->_router->getDispatch('platform') == ''
                 ?
                 $this->_router->getDefaultPlatform()
                 :
-                strtolower($this->_router->getUrl('platform'))
+                strtolower($this->_router->getDispatch('platform'))
         );
         //定义常量保存控制器
         $this->_router->setController(
-            $this->_router->getUrl('controller') == ''
+            $this->_router->getDispatch('controller') == ''
                 ?
                 $this->_router->getDefaultController()
                 :
-                ucfirst($this->_router->getUrl('controller'))
+                ucfirst($this->_router->getDispatch('controller'))
         );
         //定义常量保存操作方法
         $this->_router->setAction(
-            $this->_router->getUrl('action') == ''
+            $this->_router->getDispatch('action') == ''
                 ?
                 $this->_router->getDefaultAction()
                 :
-                strtolower($this->_router->getUrl('action'))
+                strtolower($this->_router->getDispatch('action'))
         );
     }
 
