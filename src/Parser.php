@@ -43,7 +43,7 @@ class Parser
                  * 检测是否为闭包
                  */
                 if($router instanceof Closure){
-                    $this->_router->setCallBack([$router,$curr_url]);
+                    $this->_router->setCallBack([$router,$curr_url, $val['var']]);
                     return false;
                 }
 

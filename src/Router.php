@@ -437,15 +437,16 @@ class Router implements RunInterface
         if ('/' != $rule) {
             $rule = trim($rule, '/');
         }
-        $vars = $this->parseVar($rule);
+        $vars = $this->parseVar($rule, $pattern);
+        $regex = empty($vars['regex']) ? $vars['regex_route'] : $vars['regex_route'] . '\/' . substr($vars['regex'],0, -2);
         $this->rules[$type][] = ['rule' => empty($vars['regex_route']) ?
             substr($vars['regex'],0, -2) :
-            $vars['regex_route'] . '\/' . substr($vars['regex'],0, -2),
+            $regex,
             'route' => $route, 'var' => $vars['var'], 'option' => $option, 'pattern' => $pattern];
     }
 
     // 分析路由规则中的变量
-    private function parseVar($rule)
+    private function parseVar($rule, $pattern)
     {
         // 提取路由规则中的变量
         $var = [];
@@ -468,7 +469,11 @@ class Router implements RunInterface
             if (0 === strpos($val, ':')) {
                 // URL变量
                 $name = substr($val, 1);
-                $regex .= '\d*\/';
+                if(isset($pattern[$name])){
+                    $regex .= trim($pattern[$name], '/') . '\/';
+                } else {
+                    $regex .= '\d*\/';
+                }
                 $var['var'][] = $name;
                 $var['key'][] = $key;
             } else {

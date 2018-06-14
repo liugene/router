@@ -56,7 +56,16 @@ class Dispatch
                      */
                     $paramName[] = app()->get($dependentClass);
                 } else {
-                    $paramName[] = $callback[1][$paramIndex];
+                    /**
+                     * 获取请求参数值
+                     */
+                    if(!empty($callback[2]['var'])){
+                        foreach ($callback[2]['var'] as $varKey => $value){
+                            $paramName[$value] = $callback[1][$callback[2]['key'][$varKey]];
+                        }
+                    }
+//                    dump($paramName);die;
+//                    $paramName[] = $callback[1][$parameter->getName()];
                 }
             }
             $response = call_user_func_array($callback[0], $paramName);
