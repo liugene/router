@@ -140,6 +140,10 @@ class Router implements RunInterface
      */
     private $_dispatch;
 
+    /**
+     * 回调路由
+     * @var $callback
+     */
     private $callback;
 
     public function __construct(Parser $parser, Dispatch $dispatch)

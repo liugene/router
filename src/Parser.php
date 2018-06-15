@@ -62,9 +62,24 @@ class Parser
                         $router .= '/' . $value . '/' . $curr_url[$val['var']['key'][$varKey]];
                     }
                 }
+
+                /**
+                 * 检测是否有过滤器
+                 */
+                if(isset($val['option']['filter'])){
+
+                    $filter = new $val['option']['filter'];
+
+                    if($filter instanceof RouterFilter){
+                        call_user_func([$filter, 'handle']);
+                    }
+                }
+
                 continue;
             }
         }
+        //触发路由中间件
+        app()->event('routerMiddleware');
         // 成功匹配后返回URL
         return $router;
     }
