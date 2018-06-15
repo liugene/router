@@ -95,7 +95,11 @@ class Parser
         if(is_array($path)) {
             $parser_url = preg_replace('/\.html[\s\S]*/','',$path);
         } else {
-            $parser_url = preg_replace('/\.html[\s\S]*/','',$path);
+            if(preg_match('/\.html/', $path)){
+                $parser_url = preg_replace('/\.html[\s\S]*/','',$path);
+            } else {
+                $parser_url = preg_replace('/\?[\s\S]*/','',$path);
+            }
         }
         if($rule){
             /**
