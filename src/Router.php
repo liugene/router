@@ -152,29 +152,51 @@ class Router implements RunInterface
         $this->_dispatch = $dispatch;
     }
 
+    /**
+     * 路由初始化
+     * @return $this
+     */
     public function init()
     {
         return $this;
     }
 
+    /**
+     * 路由配置文件导入
+     * @param $rules
+     * @return $this
+     */
     public function import(array $rules)
     {
         $this->rule($rules);
         return $this;
     }
 
+    /**
+     * 路由解析
+     * @return $this
+     */
     public function parser()
     {
         $this->_parser->parserPath($this);
         return $this;
     }
 
+    /**
+     * 路由分发
+     * @return $this
+     */
     public function dispatch()
     {
         $this->_dispatch->dispatch($this);
         return $this;
     }
 
+    /**
+     * 设置返回信息
+     * @param $data
+     * @return $this
+     */
     public function setReturnData($data)
     {
         $this->return_data = $data;
@@ -187,54 +209,99 @@ class Router implements RunInterface
         return $this;
     }
 
+    /**
+     * 设置路由分发
+     * @param $dispatch
+     * @return $this
+     */
     public function setDispatch($dispatch)
     {
         $this->dispatch = $dispatch;
         return $this;
     }
 
+    /**
+     * 设置url路径
+     * @param $path
+     * @return $this
+     */
     public function setPath($path)
     {
         $this->path = $path;
         return $this;
     }
 
+    /**
+     * 设置请求方法
+     * @param $method
+     * @return $this
+     */
     public function setMethod($method)
     {
         $this->method = $method;
         return $this;
     }
 
+    /**
+     * 设置默认的模块
+     * @param $platform
+     * @return $this
+     */
     public function setDefaultPlatform($platform)
     {
         $this->default_platform = $platform;
         return $this;
     }
 
+    /**
+     * 设置默认控制我
+     * @param $controller
+     * @return $this
+     */
     public function setDefaultController($controller)
     {
         $this->default_controller = $controller;
         return $this;
     }
 
+    /**
+     * 设置默认方法
+     * @param $action
+     * @return $this
+     */
     public function setDefaultAction($action)
     {
         $this->default_action = $action;
         return $this;
     }
 
+    /**
+     * 设置模块接收变量
+     * @param $platform
+     * @return $this
+     */
     public function setVarPlatform($platform)
     {
         $this->var_platform = $platform;
         return $this;
     }
 
+    /**
+     * 设置控制器接收变量
+     * @param $controller
+     * @return $this
+     */
     public function setVarController($controller)
     {
         $this->var_controller = $controller;
         return $this;
     }
 
+    /**
+     * 设置方法接收变量
+     * @param $action
+     * @return $this
+     */
     public function setVarAction($action)
     {
         $this->var_action = $action;
@@ -247,36 +314,66 @@ class Router implements RunInterface
         return $this;
     }
 
+    /**
+     * 设置get请求参数
+     * @param $param
+     * @return $this
+     */
     public function setGetParam($param)
     {
         $this->get_param = $param;
         return $this;
     }
 
+    /**
+     * 设置当前请求模块
+     * @param $platform
+     * @return $this
+     */
     public function setPlatform($platform)
     {
         $this->platform = $platform;
         return $this;
     }
 
+    /**
+     * 设置当前请求控制器
+     * @param $controller
+     * @return $this
+     */
     public function setController($controller)
     {
         $this->controller = $controller;
         return $this;
     }
 
+    /**
+     * 设置当前请求方法
+     * @param $action
+     * @return $this
+     */
     public function setAction($action)
     {
         $this->action = $action;
         return $this;
     }
 
+    /**
+     * 设置命名空间
+     * @param $namespace
+     * @return $this
+     */
     public function setNamespace($namespace)
     {
         $this->namespace = $namespace;
         return $this;
     }
 
+    /**
+     * 设置回调路由
+     * @param $callback
+     * @return $this
+     */
     public function setCallBack($callback)
     {
         $this->callback = $callback;
@@ -286,56 +383,100 @@ class Router implements RunInterface
 
     /////////////////参数获取//////////////////////
 
+    /**
+     * 获取返回方法
+     * @return string|array|object
+     */
     public function getReturnData()
     {
         return $this->return_data;
     }
 
+    /**
+     * 获取url模式
+     * @return int
+     */
     public function getUrlModel()
     {
         return $this->url_module;
     }
 
+    /**
+     * 获取当前分发
+     * @return string|array
+     */
     public function getDispatch($key='')
     {
         return $key == '' ? $this->dispatch : $this->dispatch[$key];
     }
 
+    /**
+     * 获取当前请求路径
+     * @return string
+     */
     public function getPath()
     {
         return $this->path;
     }
 
+    /**
+     * 获取请求方法
+     * @return string
+     */
     public function getMethod()
     {
         return $this->method;
     }
 
+    /**
+     * 获取默认模块
+     * @return string
+     */
     public function getDefaultPlatform()
     {
         return $this->default_platform;
     }
 
+    /**
+     * 获取默认控制器
+     * @return string
+     */
     public function getDefaultController()
     {
         return $this->default_controller;
     }
 
+    /**
+     * 获取默认方法
+     * @return string
+     */
     public function getDefaultAction()
     {
         return $this->default_action;
     }
 
+    /**
+     * 获取模块变量
+     * @return string
+     */
     public function getVarPlatform()
     {
         return $this->var_platform;
     }
 
+    /**
+     * 获取控制器变量
+     * @return string
+     */
     public function getVarController()
     {
         return $this->var_controller;
     }
 
+    /**
+     * 获取方法变量
+     * @return string
+     */
     public function getVarAction()
     {
         return $this->var_action;
@@ -346,36 +487,64 @@ class Router implements RunInterface
         return $this->route_rules_on;
     }
 
+    /**
+     * 获取路由规则
+     * @return array
+     */
     public function getRule()
     {
         return $this->rules;
     }
 
+    /**
+     * 获取get请求参数
+     * @return array
+     */
     public function getGetParam()
     {
         return $this->get_param;
     }
 
+    /**
+     * 获取模块
+     * @return string
+     */
     public function getPlatform()
     {
         return $this->platform;
     }
 
+    /**
+     * 获取请求控制器
+     * @return string
+     */
     public function getController()
     {
         return $this->controller;
     }
 
+    /**
+     * 获取请求方法
+     * @return string
+     */
     public function getAction()
     {
         return $this->action;
     }
 
+    /**
+     * 获取命名空间
+     * @return string
+     */
     public function getNamespace()
     {
         return $this->namespace;
     }
 
+    /**
+     * 获取回调方法
+     * @return array
+     */
     public function getCallBack()
     {
         return $this->callback;
@@ -422,6 +591,14 @@ class Router implements RunInterface
         }
     }
 
+    /**
+     * 设置路由
+     * @param $rule
+     * @param $route
+     * @param $type
+     * @param $option
+     * @param $pattern
+     */
     private function setRule($rule, $route, $type, $option, $pattern)
     {
 //        dump($rule);
@@ -449,7 +626,12 @@ class Router implements RunInterface
             'route' => $route, 'var' => $vars['var'], 'option' => $option, 'pattern' => $pattern];
     }
 
-    // 分析路由规则中的变量
+    /**
+     * 分析路由规则中的变量
+     * @param $rule
+     * @param $pattern
+     * @return array
+     */
     private function parseVar($rule, $pattern)
     {
         // 提取路由规则中的变量

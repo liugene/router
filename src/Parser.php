@@ -68,11 +68,8 @@ class Parser
                  */
                 if(isset($val['option']['filter'])){
 
-                    $filter = new $val['option']['filter'];
+                    $this->parserFilter($val['option']['filter']);
 
-                    if($filter instanceof RouterFilter){
-                        call_user_func([$filter, 'handle']);
-                    }
                 }
 
                 continue;
@@ -82,6 +79,36 @@ class Parser
         app()->event('routerMiddleware');
         // 成功匹配后返回URL
         return $router;
+    }
+
+    /**
+     * 解析过滤器并执行
+     * @param $filters
+     * @return boolean
+     */
+    private function parserFilter($filters)
+    {
+
+        /**
+         * 过滤器是否为数组
+         */
+        if(is_array($filters)){
+            foreach ($filters as $filter){
+                call_user_func([new $filter, 'handle']);
+            }
+            return true;
+        }
+
+        /**
+         * 实例化过滤器
+         */
+        $filterObject = new $filters;
+
+        if($filterObject instanceof RouterFilter){
+            call_user_func([$filterObject, 'handle']);
+        }
+        return true;
+
     }
 
     public function parserPath(Router $router)
