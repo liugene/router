@@ -154,7 +154,7 @@ class Parser
             /**
              * 走闭包路由，不实例控制器
              */
-            if(!$parser_url){
+            if(false === $parser_url){
                 return;
             }
         }
@@ -165,7 +165,7 @@ class Parser
             case 1:
                 $dispatch = explode('/',trim($parser_url,'/'));
                 if(preg_match('/^index.php$/', $dispatch[0])){
-                    $this->param['platform'] = $this->assetNamespace($dispatch['1']);
+                    $this->param['platform'] = isset($dispatch['1']) ? $this->assetNamespace($dispatch['1']) : '';
                     $this->param['controller'] = isset($dispatch['2']) ? $dispatch['2'] : '';
                     $this->param['action'] = isset($dispatch['3']) ? $dispatch['3'] : '';
                     $this->getValue($parser_url,4);
