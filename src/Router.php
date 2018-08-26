@@ -21,6 +21,7 @@ class Router implements RunInterface
         'domain'  => [],
         'pattern' => [],
         'name'    => [],
+        'ws'    => [],
     ];
 
     // REST路由操作方法定义
@@ -66,7 +67,7 @@ class Router implements RunInterface
      * @param string $default_platform
      * 默认操作平台
      */
-    private $default_platform = 'main';
+    private $default_platform = 'http';
 
     /**
      * @param string $default_controller
@@ -146,6 +147,8 @@ class Router implements RunInterface
      */
     private $callback;
 
+    private $ws_handle = false;
+
     public function __construct(Parser $parser, Dispatch $dispatch)
     {
         $this->_parser = $parser;
@@ -188,8 +191,7 @@ class Router implements RunInterface
      */
     public function dispatch()
     {
-        $this->_dispatch->dispatch($this);
-        return $this;
+        return $this->_dispatch->dispatch($this);
     }
 
     /**
@@ -378,6 +380,17 @@ class Router implements RunInterface
     {
         $this->callback = $callback;
         return $this;
+    }
+
+    public function setWsHandle($bool)
+    {
+        $this->ws_handle = $bool;
+        return $this;
+    }
+
+    public function getWsHandle()
+    {
+        return $this->ws_handle;
     }
 
 
@@ -752,6 +765,20 @@ class Router implements RunInterface
     public function patch($rule, $route = '', $option = [], $pattern = [])
     {
         $this->rule($rule, $route, 'PATCH', $option, $pattern);
+    }
+
+    /**
+     * 注册PATCH路由
+     * @access public
+     * @param string    $rule 路由规则
+     * @param string    $route 路由地址
+     * @param array     $option 路由参数
+     * @param array     $pattern 变量规则
+     * @return void
+     */
+    public function ws($rule, $route = '', $option = [], $pattern = [])
+    {
+        $this->rule($rule, $route, 'ws', $option, $pattern);
     }
 
     /**

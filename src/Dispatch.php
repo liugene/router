@@ -32,6 +32,10 @@ class Dispatch
     public function dispatch(Router $router)
     {
         $this->app->hook('modelMiddleware');
+        if($router->getWsHandle()){
+            $controller_name = $router->getNamespace()  . '\\' . $router->getPlatform() . '\controller\\' . $router->getController();
+            return $this->app->make($controller_name);
+        }
         if($router->getCallBack()){
             $callback = $router->getCallBack();
             $reflectorFunc =  new ReflectionFunction($callback[0]);

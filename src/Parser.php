@@ -57,6 +57,19 @@ class Parser
                     $router = '/'. $module . '/' . $controller . '/' . $action;
                 }
 
+                /**
+                 * 检测是否有#
+                 */
+                if(0 != strpos($router, '#')){
+                    $path = str_replace('#', '/', $router);
+                    list($empty, $name, $module, $controller, $action) = explode('/' , $path);
+                    if($action === 'ws'){
+                        $this->_router->setWsHandle(true);
+                        $this->_router->setNamespace(strtolower($name));
+                        $router = '/'. $module . '/' . $controller;
+                    }
+                }
+
                 if(!empty($val['var'])){
                     foreach ($val['var']['var'] as $varKey => $value){
                         $router .= '/' . $value . '/' . $curr_url[$val['var']['key'][$varKey]];
@@ -149,7 +162,7 @@ class Parser
              */
             $parser_url = $this->match(
                 trim($parser_url, '/'),
-                array_merge($rule['get'],$rule['*']),
+                array_merge($rule[$this->_router->getMethod()],$rule['*']),
                 []);
             /**
              * 走闭包路由，不实例控制器
